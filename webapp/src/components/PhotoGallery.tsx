@@ -141,78 +141,73 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
       {/* Lightbox */}
       {lightboxIndex !== null && currentFilename && (
         <div
-          className="fixed inset-0 z-50 animate-fade-in cursor-pointer"
-          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}
+          className="fixed inset-0 z-50 animate-fade-in flex items-center justify-center cursor-pointer"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
           onClick={close}
         >
-          {/* Image area — padded to guarantee dark clickable border on all sides.
-              Clicking the padding also closes (cursor-pointer on backdrop). */}
+          {/* Modal box — clicking inside does NOT close */}
           <div
-            className="absolute flex items-center justify-center"
-            style={{ top: 56, bottom: 36, left: 72, right: 72 }}
-            onClick={close}
+            className="relative flex flex-col cursor-default rounded-2xl overflow-hidden"
+            style={{
+              width: "min(88vw, 1100px)",
+              maxHeight: "88vh",
+              background: "rgba(10,10,10,0.97)",
+              boxShadow: "0 32px 80px rgba(0,0,0,0.9)",
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
-            {!fullLoaded && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-4 py-3 shrink-0 border-b border-white/10">
+              <span className="text-white/40 text-xs font-mono truncate max-w-[50%]">{currentFilename}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white/50 text-sm">{lightboxIndex + 1} / {photos.length}</span>
+                <button onClick={(e) => downloadSingle(e, currentFilename)} className="btn-primary py-1.5 px-3 text-sm">
+                  ↓ Download
+                </button>
+                <button
+                  onClick={close}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all hover:scale-110"
+                  style={{ background: "rgba(255,255,255,0.1)" }}
+                >
+                  ✕
+                </button>
               </div>
-            )}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photoUrl(currentFilename)}
-              alt={currentFilename}
-              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-              className={`rounded-xl shadow-2xl transition-opacity duration-300 cursor-default ${fullLoaded ? "opacity-100" : "opacity-0"}`}
-              onClick={(e) => e.stopPropagation()}
-              onLoad={() => setFullLoaded(true)}
-            />
-          </div>
+            </div>
 
-          {/* Prev arrow */}
-          <button
-            onClick={(e) => { e.stopPropagation(); prev(); }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
-            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
-          >
-            ‹
-          </button>
+            {/* Image + nav row */}
+            <div className="flex items-center gap-2 px-3 py-4 min-h-0 flex-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); prev(); }}
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
+                style={{ background: "rgba(255,255,255,0.12)" }}
+              >
+                ‹
+              </button>
 
-          {/* Next arrow */}
-          <button
-            onClick={(e) => { e.stopPropagation(); next(); }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
-            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
-          >
-            ›
-          </button>
+              <div className="relative flex-1 flex items-center justify-center min-w-0" style={{ minHeight: 200 }}>
+                {!fullLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                  </div>
+                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoUrl(currentFilename)}
+                  alt={currentFilename}
+                  style={{ maxWidth: "100%", maxHeight: "calc(88vh - 110px)", objectFit: "contain" }}
+                  className={`rounded-lg shadow-2xl transition-opacity duration-300 ${fullLoaded ? "opacity-100" : "opacity-0"}`}
+                  onLoad={() => setFullLoaded(true)}
+                />
+              </div>
 
-          {/* Top bar */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-            <span className="text-white/60 text-sm font-medium">
-              {lightboxIndex + 1} / {photos.length}
-            </span>
-          </div>
-
-          {/* Top-right controls */}
-          <div className="absolute top-3 right-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={(e) => downloadSingle(e, currentFilename)}
-              className="btn-primary py-2 px-4 text-sm"
-            >
-              ↓ Download
-            </button>
-            <button
-              onClick={close}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white transition-all hover:scale-110"
-              style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Filename bottom */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-            <span className="text-white/50 text-xs font-mono">{currentFilename}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); next(); }}
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
+                style={{ background: "rgba(255,255,255,0.12)" }}
+              >
+                ›
+              </button>
+            </div>
           </div>
         </div>
       )}
