@@ -6,15 +6,12 @@ import PhotoCard from "./PhotoCard";
 import { photoUrl } from "@/lib/storage";
 import type { ManifestEntry } from "@/lib/types";
 
-// Tailwind grid: lg≥1024→5cols, md≥768→4, sm≥640→3, <640→2. Gap=12px, page padding≈64px.
+// 3 rows of the grid — gives ~10 on mobile (2 cols), ~15 on laptop (5 cols)
 function calcBatch(): number {
-  if (typeof window === "undefined") return 20;
+  if (typeof window === "undefined") return 15;
   const w = window.innerWidth;
-  const h = window.innerHeight;
   const cols = w >= 1024 ? 5 : w >= 768 ? 4 : w >= 640 ? 3 : 2;
-  const cardSize = (w - 64 - (cols - 1) * 12) / cols;
-  const rows = Math.ceil(h / (cardSize + 12)) + 1; // +1 row buffer
-  return cols * rows;
+  return cols * 3;
 }
 
 interface Props {
@@ -87,12 +84,6 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxIndex, prev, next]);
-
-  // Lock body scroll when lightbox open
-  useEffect(() => {
-    document.body.style.overflow = lightboxIndex !== null ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [lightboxIndex]);
 
   // Touch swipe handlers
   const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
@@ -217,16 +208,16 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
       {/* Lightbox */}
       {lightboxIndex !== null && currentFilename && (
         <div
-          className="fixed inset-0 z-50 animate-fade-in flex items-center justify-center cursor-pointer"
-          style={{ background: "rgba(0,0,0,0.88)" }}
+          className="fixed inset-0 z-50 animate-fade-in flex items-start justify-center cursor-pointer"
+          style={{ background: "rgba(0,0,0,0.88)", padding: "48px 16px 16px" }}
           onClick={close}
         >
-          {/* Modal — click inside does NOT close */}
+          {/* Modal fills the remaining viewport — click inside does NOT close */}
           <div
-            className="relative flex flex-col cursor-default rounded-2xl overflow-hidden"
+            className="relative flex flex-col cursor-default rounded-2xl overflow-hidden w-full"
             style={{
-              width: "min(92vw, 1100px)",
-              maxHeight: "90vh",
+              maxWidth: 1200,
+              height: "calc(100vh - 64px)",
               background: "rgba(10,10,10,0.98)",
               boxShadow: "0 32px 80px rgba(0,0,0,0.9)",
             }}
@@ -275,7 +266,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
                 <img
                   src={photoUrl(currentFilename)}
                   alt={currentFilename}
-                  style={{ maxWidth: "100%", maxHeight: "calc(90vh - 100px)", objectFit: "contain" }}
+                  style={{ maxWidth: "100%", maxHeight: "calc(100vh - 164px)", objectFit: "contain" }}
                   className={`rounded-lg shadow-2xl transition-opacity duration-300 ${fullLoaded ? "opacity-100" : "opacity-0"}`}
                   onLoad={() => setFullLoaded(true)}
                 />
