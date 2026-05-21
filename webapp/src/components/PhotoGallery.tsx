@@ -6,7 +6,16 @@ import PhotoCard from "./PhotoCard";
 import { photoUrl } from "@/lib/storage";
 import type { ManifestEntry } from "@/lib/types";
 
-const BATCH = 30;
+// Tailwind grid: lg≥1024→5cols, md≥768→4, sm≥640→3, <640→2. Gap=12px, page padding≈64px.
+function calcBatch(): number {
+  if (typeof window === "undefined") return 20;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const cols = w >= 1024 ? 5 : w >= 768 ? 4 : w >= 640 ? 3 : 2;
+  const cardSize = (w - 64 - (cols - 1) * 12) / cols;
+  const rows = Math.ceil(h / (cardSize + 12)) + 1; // +1 row buffer
+  return cols * rows;
+}
 
 interface Props {
   matchedFilenames: string[];
@@ -19,7 +28,8 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
   const [dlProgress, setDlProgress] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [fullLoaded, setFullLoaded] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(BATCH);
+  const [visibleCount, setVisibleCount] = useState(() => calcBatch());
+  const batchRef = useRef(calcBatch());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -28,8 +38,18 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
   const photos = matchedFilenames.filter((f) => (seen.has(f) ? false : (seen.add(f), true)));
   const entryMap = new Map(manifest.map((m) => [m.filename, m]));
 
-  // Reset visible count when results change
-  useEffect(() => { setVisibleCount(BATCH); }, [photos.length]);
+  // Recalculate batch on resize and reset on new results
+  useEffect(() => {
+    const update = () => { batchRef.current = calcBatch(); };
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    const b = calcBatch();
+    batchRef.current = b;
+    setVisibleCount(b);
+  }, [photos.length]);
 
   // Infinite scroll sentinel
   useEffect(() => {
@@ -38,7 +58,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount((c) => Math.min(c + BATCH, photos.length));
+          setVisibleCount((c) => Math.min(c + batchRef.current, photos.length));
         }
       },
       { rootMargin: "300px" }
@@ -188,7 +208,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
               <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
             </div>
           )}
-          {visibleCount >= photos.length && photos.length > BATCH && (
+          {visibleCount >= photos.length && photos.length > batchRef.current && (
             <p className="text-center text-xs text-gray-400 py-6">All {photos.length} photos loaded</p>
           )}
         </>
@@ -227,8 +247,8 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
                 </button>
                 <button
                   onClick={close}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all"
-                  style={{ background: "rgba(255,255,255,0.1)" }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-base transition-all hover:scale-110"
+                  style={{ background: "rgba(255,255,255,0.25)" }}
                 >
                   ✕
                 </button>
