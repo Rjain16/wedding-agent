@@ -1,0 +1,10 @@
+.env.local
+.next/
+node_modules/
+out/
+public/models/*.json
+public/models/*.bin
+public/photos/
+public/thumbnails/
+public/embeddings.json
+public/manifest.json
