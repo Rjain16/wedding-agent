@@ -43,6 +43,15 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxIndex, prev, next]);
 
+  useEffect(() => {
+    if (lightboxIndex !== null) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [lightboxIndex]);
+
   const downloadSingle = async (e: React.MouseEvent, filename: string) => {
     e.stopPropagation();
     try {
@@ -142,7 +151,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
       {lightboxIndex !== null && currentFilename && (
         <div
           className="fixed inset-0 z-50 animate-fade-in flex items-center justify-center cursor-pointer"
-          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+          style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(4px)" }}
           onClick={close}
         >
           {/* Modal box — clicking inside does NOT close */}
