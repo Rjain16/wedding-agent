@@ -19,7 +19,8 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
   const [fullLoaded, setFullLoaded] = useState(false);
 
   // Deduplicate by filename
-  const photos = [...new Map(matchedFilenames.map((f) => [f, f])).values()];
+  const seen = new Set<string>();
+  const photos = matchedFilenames.filter((f) => (seen.has(f) ? false : (seen.add(f), true)));
   const entryMap = new Map(manifest.map((m) => [m.filename, m]));
 
   const openAt = (i: number) => { setLightboxIndex(i); setFullLoaded(false); };
