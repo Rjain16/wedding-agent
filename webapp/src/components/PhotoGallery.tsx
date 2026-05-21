@@ -135,7 +135,8 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
   const visiblePhotos = photos.slice(0, visibleCount);
 
   return (
-    <div className="animate-slide-up w-full">
+    <>
+      <div className="animate-slide-up w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -205,11 +206,13 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
         </>
       )}
 
-      {/* Lightbox */}
+      </div>{/* end animate-slide-up */}
+
+      {/* Lightbox — outside the transformed parent so position:fixed works relative to viewport */}
       {lightboxIndex !== null && currentFilename && (
         <div
           className="fixed inset-0 z-50 animate-fade-in flex items-start justify-center cursor-pointer"
-          style={{ background: "rgba(0,0,0,0.88)", padding: "48px 16px 16px" }}
+          style={{ background: "rgba(0,0,0,0.88)", padding: "12px 12px 12px" }}
           onClick={close}
         >
           {/* Modal fills the remaining viewport — click inside does NOT close */}
@@ -217,7 +220,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
             className="relative flex flex-col cursor-default rounded-2xl overflow-hidden w-full"
             style={{
               maxWidth: 1200,
-              height: "calc(100vh - 64px)",
+              height: "calc(100vh - 24px)",
               background: "rgba(10,10,10,0.98)",
               boxShadow: "0 32px 80px rgba(0,0,0,0.9)",
             }}
@@ -266,7 +269,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
                 <img
                   src={photoUrl(currentFilename)}
                   alt={currentFilename}
-                  style={{ maxWidth: "100%", maxHeight: "calc(100vh - 164px)", objectFit: "contain" }}
+                  style={{ maxWidth: "100%", maxHeight: "calc(100vh - 120px)", objectFit: "contain" }}
                   className={`rounded-lg shadow-2xl transition-opacity duration-300 ${fullLoaded ? "opacity-100" : "opacity-0"}`}
                   onLoad={() => setFullLoaded(true)}
                 />
@@ -283,6 +286,6 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
