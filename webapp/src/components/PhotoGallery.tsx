@@ -141,14 +141,17 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
       {/* Lightbox */}
       {lightboxIndex !== null && currentFilename && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center animate-fade-in overflow-hidden"
           style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}
           onClick={close}
         >
-          {/* Image */}
-          <div className="relative max-w-[90vw] max-h-[85vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          {/* Image — padded away from top/bottom chrome */}
+          <div
+            className="relative flex items-center justify-center"
+            style={{ width: "90vw", height: "calc(100vh - 120px)" }}
+          >
             {!fullLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
               </div>
             )}
@@ -156,7 +159,9 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
             <img
               src={photoUrl(currentFilename)}
               alt={currentFilename}
-              className={`max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl transition-opacity duration-300 ${fullLoaded ? "opacity-100" : "opacity-0"}`}
+              style={{ maxWidth: "90vw", maxHeight: "calc(100vh - 120px)", width: "auto", height: "auto" }}
+              className={`rounded-xl object-contain shadow-2xl transition-opacity duration-300 cursor-default ${fullLoaded ? "opacity-100" : "opacity-0"}`}
+              onClick={(e) => e.stopPropagation()}
               onLoad={() => setFullLoaded(true)}
             />
           </div>
