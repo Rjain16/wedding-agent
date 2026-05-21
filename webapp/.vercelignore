@@ -1,0 +1,7 @@
+public/photos
+public/thumbnails
+public/embeddings.json
+public/manifest.json
+public/models
+node_modules
+.next
