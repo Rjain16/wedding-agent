@@ -141,14 +141,16 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
       {/* Lightbox */}
       {lightboxIndex !== null && currentFilename && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center animate-fade-in overflow-hidden"
+          className="fixed inset-0 z-50 animate-fade-in cursor-pointer"
           style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}
           onClick={close}
         >
-          {/* Image — padded away from top/bottom chrome */}
+          {/* Image area — padded to guarantee dark clickable border on all sides.
+              Clicking the padding also closes (cursor-pointer on backdrop). */}
           <div
-            className="relative flex items-center justify-center"
-            style={{ width: "90vw", height: "calc(100vh - 120px)" }}
+            className="absolute flex items-center justify-center"
+            style={{ top: 56, bottom: 36, left: 72, right: 72 }}
+            onClick={close}
           >
             {!fullLoaded && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -159,8 +161,8 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
             <img
               src={photoUrl(currentFilename)}
               alt={currentFilename}
-              style={{ maxWidth: "90vw", maxHeight: "calc(100vh - 120px)", width: "auto", height: "auto" }}
-              className={`rounded-xl object-contain shadow-2xl transition-opacity duration-300 cursor-default ${fullLoaded ? "opacity-100" : "opacity-0"}`}
+              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+              className={`rounded-xl shadow-2xl transition-opacity duration-300 cursor-default ${fullLoaded ? "opacity-100" : "opacity-0"}`}
               onClick={(e) => e.stopPropagation()}
               onLoad={() => setFullLoaded(true)}
             />
@@ -170,7 +172,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
           <button
             onClick={(e) => { e.stopPropagation(); prev(); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
-            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
           >
             ‹
           </button>
@@ -179,7 +181,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
           <button
             onClick={(e) => { e.stopPropagation(); next(); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
-            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+            style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
           >
             ›
           </button>
@@ -192,7 +194,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
           </div>
 
           {/* Top-right controls */}
-          <div className="absolute top-4 right-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute top-3 right-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={(e) => downloadSingle(e, currentFilename)}
               className="btn-primary py-2 px-4 text-sm"
