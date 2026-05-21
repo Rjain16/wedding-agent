@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import JSZip from "jszip";
 import PhotoCard from "./PhotoCard";
 import { photoUrl } from "@/lib/storage";
 import type { ManifestEntry } from "@/lib/types";
+
+const BATCH = 30;
 
 interface Props {
   matchedFilenames: string[];
@@ -17,11 +19,33 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
   const [dlProgress, setDlProgress] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [fullLoaded, setFullLoaded] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(BATCH);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
 
   // Deduplicate by filename
   const seen = new Set<string>();
   const photos = matchedFilenames.filter((f) => (seen.has(f) ? false : (seen.add(f), true)));
   const entryMap = new Map(manifest.map((m) => [m.filename, m]));
+
+  // Reset visible count when results change
+  useEffect(() => { setVisibleCount(BATCH); }, [photos.length]);
+
+  // Infinite scroll sentinel
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || visibleCount >= photos.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + BATCH, photos.length));
+        }
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [visibleCount, photos.length]);
 
   const openAt = (i: number) => { setLightboxIndex(i); setFullLoaded(false); };
   const close = () => setLightboxIndex(null);
@@ -32,6 +56,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
     setLightboxIndex((i) => { if (i === null) return null; setFullLoaded(false); return (i + 1) % photos.length; });
   }, [photos.length]);
 
+  // Keyboard navigation
   useEffect(() => {
     if (lightboxIndex === null) return;
     const onKey = (e: KeyboardEvent) => {
@@ -43,14 +68,21 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxIndex, prev, next]);
 
+  // Lock body scroll when lightbox open
   useEffect(() => {
-    if (lightboxIndex !== null) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = lightboxIndex !== null ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [lightboxIndex]);
+
+  // Touch swipe handlers
+  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx < -50) next();
+    else if (dx > 50) prev();
+    touchStartX.current = null;
+  };
 
   const downloadSingle = async (e: React.MouseEvent, filename: string) => {
     e.stopPropagation();
@@ -89,6 +121,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
   };
 
   const currentFilename = lightboxIndex !== null ? photos[lightboxIndex] : null;
+  const visiblePhotos = photos.slice(0, visibleCount);
 
   return (
     <div className="animate-slide-up w-full">
@@ -106,7 +139,9 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
             )}
           </div>
           {photos.length > 0 && (
-            <p className="text-sm text-gray-400 mt-1">Click any photo to view · use ← → arrows to browse</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Tap any photo to view · swipe or use ← → to browse
+            </p>
           )}
         </div>
 
@@ -129,53 +164,70 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
         </div>
       )}
 
-      {/* Grid */}
+      {/* Grid — only renders visibleCount photos */}
       {photos.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {photos.map((filename, i) => {
-            const entry = entryMap.get(filename);
-            return (
-              <PhotoCard
-                key={filename}
-                filename={filename}
-                thumbnailName={entry?.thumbnail ?? filename}
-                onOpen={() => openAt(i)}
-                onDownload={(e) => downloadSingle(e, filename)}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {visiblePhotos.map((filename, i) => {
+              const entry = entryMap.get(filename);
+              return (
+                <PhotoCard
+                  key={filename}
+                  filename={filename}
+                  thumbnailName={entry?.thumbnail ?? filename}
+                  onOpen={() => openAt(i)}
+                  onDownload={(e) => downloadSingle(e, filename)}
+                />
+              );
+            })}
+          </div>
+
+          {/* Sentinel + loading indicator */}
+          {visibleCount < photos.length && (
+            <div ref={sentinelRef} className="flex justify-center py-8">
+              <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
+            </div>
+          )}
+          {visibleCount >= photos.length && photos.length > BATCH && (
+            <p className="text-center text-xs text-gray-400 py-6">All {photos.length} photos loaded</p>
+          )}
+        </>
       )}
 
       {/* Lightbox */}
       {lightboxIndex !== null && currentFilename && (
         <div
           className="fixed inset-0 z-50 animate-fade-in flex items-center justify-center cursor-pointer"
-          style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(4px)" }}
+          style={{ background: "rgba(0,0,0,0.88)" }}
           onClick={close}
         >
-          {/* Modal box — clicking inside does NOT close */}
+          {/* Modal — click inside does NOT close */}
           <div
             className="relative flex flex-col cursor-default rounded-2xl overflow-hidden"
             style={{
-              width: "min(88vw, 1100px)",
-              maxHeight: "88vh",
-              background: "rgba(10,10,10,0.97)",
+              width: "min(92vw, 1100px)",
+              maxHeight: "90vh",
+              background: "rgba(10,10,10,0.98)",
               boxShadow: "0 32px 80px rgba(0,0,0,0.9)",
             }}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
           >
             {/* Top bar */}
-            <div className="flex items-center justify-between px-4 py-3 shrink-0 border-b border-white/10">
-              <span className="text-white/40 text-xs font-mono truncate max-w-[50%]">{currentFilename}</span>
+            <div className="flex items-center justify-between px-3 py-2.5 shrink-0 border-b border-white/10">
+              <span className="text-white/40 text-xs font-mono truncate max-w-[40%]">{currentFilename}</span>
               <div className="flex items-center gap-2">
-                <span className="text-white/50 text-sm">{lightboxIndex + 1} / {photos.length}</span>
-                <button onClick={(e) => downloadSingle(e, currentFilename)} className="btn-primary py-1.5 px-3 text-sm">
-                  ↓ Download
+                <span className="text-white/50 text-xs sm:text-sm">{lightboxIndex + 1} / {photos.length}</span>
+                <button
+                  onClick={(e) => downloadSingle(e, currentFilename)}
+                  className="btn-primary py-1.5 px-3 text-xs sm:text-sm"
+                >
+                  ↓ Save
                 </button>
                 <button
                   onClick={close}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all hover:scale-110"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all"
                   style={{ background: "rgba(255,255,255,0.1)" }}
                 >
                   ✕
@@ -183,27 +235,27 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
               </div>
             </div>
 
-            {/* Image + nav row */}
-            <div className="flex items-center gap-2 px-3 py-4 min-h-0 flex-1">
+            {/* Image + nav */}
+            <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-3 sm:py-4 min-h-0 flex-1">
               <button
                 onClick={(e) => { e.stopPropagation(); prev(); }}
-                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
+                className="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl text-white transition-all active:scale-95"
                 style={{ background: "rgba(255,255,255,0.12)" }}
               >
                 ‹
               </button>
 
-              <div className="relative flex-1 flex items-center justify-center min-w-0" style={{ minHeight: 200 }}>
+              <div className="relative flex-1 flex items-center justify-center min-w-0" style={{ minHeight: 180 }}>
                 {!fullLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                    <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
                   </div>
                 )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photoUrl(currentFilename)}
                   alt={currentFilename}
-                  style={{ maxWidth: "100%", maxHeight: "calc(88vh - 110px)", objectFit: "contain" }}
+                  style={{ maxWidth: "100%", maxHeight: "calc(90vh - 100px)", objectFit: "contain" }}
                   className={`rounded-lg shadow-2xl transition-opacity duration-300 ${fullLoaded ? "opacity-100" : "opacity-0"}`}
                   onLoad={() => setFullLoaded(true)}
                 />
@@ -211,7 +263,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
 
               <button
                 onClick={(e) => { e.stopPropagation(); next(); }}
-                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-2xl text-white transition-all hover:scale-110"
+                className="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl text-white transition-all active:scale-95"
                 style={{ background: "rgba(255,255,255,0.12)" }}
               >
                 ›
