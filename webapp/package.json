@@ -6,11 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "setup-models": "node scripts/setup-models.js"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@vladmandic/face-api": "^1.7.14",
     "jszip": "^3.10.1",
     "next": "14.2.29",
     "react": "^18.3.1",
