@@ -26,7 +26,7 @@ CORS(app, origins=ALLOWED_ORIGINS, methods=["GET", "POST"], allow_headers=["Cont
 logger.info("Loading InsightFace buffalo_s model ...")
 from insightface.app import FaceAnalysis
 fa = FaceAnalysis(name="buffalo_s", providers=["CPUExecutionProvider"])
-fa.prepare(ctx_id=0, det_size=(640, 640))
+fa.prepare(ctx_id=0, det_size=(320, 320))
 logger.info("Model ready.")
 
 
