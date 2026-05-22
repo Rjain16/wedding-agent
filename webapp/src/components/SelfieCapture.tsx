@@ -156,7 +156,7 @@ export default function SelfieCapture({ onImageReady, disabled }: Props) {
         )}
       </div>
 
-      <input ref={fileRef} type="file" accept="image/*" capture="user" className="hidden"
+      <input ref={fileRef} type="file" accept="image/*" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
     </div>
   );
