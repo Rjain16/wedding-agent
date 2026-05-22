@@ -20,11 +20,11 @@ export async function GET(
 
   if (!res.ok) return new NextResponse(null, { status: res.status });
 
-  const buf = await res.arrayBuffer();
-  return new NextResponse(buf, {
+  // Stream body directly — avoids loading entire image into Compute RAM
+  return new NextResponse(res.body, {
     headers: {
       "Content-Type": res.headers.get("Content-Type") ?? "image/jpeg",
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Cache-Control": "public, s-maxage=31536000, immutable",
     },
   });
 }

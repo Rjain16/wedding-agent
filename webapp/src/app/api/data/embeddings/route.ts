@@ -8,11 +8,13 @@ const HF_BASE = "https://huggingface.co/datasets/Rjain16/wedding-photos/resolve/
 export async function GET() {
   const res = await fetch(`${HF_BASE}/embeddings.json`, {
     headers: { Authorization: `Bearer ${HF_TOKEN}` },
-    cache: "no-store",
+    next: { revalidate: 3600 },
   });
   if (!res.ok) return NextResponse.json({ error: "not found" }, { status: res.status });
   const data = await res.json();
+  // s-maxage: Vercel CDN caches for 1h — only 1 Compute hit per hour regardless of user count
+  // stale-while-revalidate: CDN serves stale while refreshing in background
   return NextResponse.json(data, {
-    headers: { "Cache-Control": "public, max-age=86400" },
+    headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
   });
 }
