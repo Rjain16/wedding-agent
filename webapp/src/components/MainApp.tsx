@@ -91,7 +91,8 @@ export default function MainApp() {
         setTimeout(() => resolve(matchPhotos(embedding, embeddingsCache.current!)), 0);
       });
 
-      setState((s) => ({ ...s, step: "results", matches }));
+      const sorted = [...matches].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+      setState((s) => ({ ...s, step: "results", matches: sorted }));
     } catch (err) {
       console.error(err);
       setState((s) => ({
@@ -107,7 +108,7 @@ export default function MainApp() {
     try {
       const manifest = manifestCache.current ?? await fetchManifest();
       manifestCache.current = manifest;
-      const sorted = [...manifest].sort((a, b) => a.filename.localeCompare(b.filename));
+      const sorted = [...manifest].sort((a, b) => a.filename.localeCompare(b.filename, undefined, { sensitivity: "base" }));
       setAllManifest(sorted);
       setViewingAll(true);
     } catch {
