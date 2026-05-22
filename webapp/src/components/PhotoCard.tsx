@@ -7,7 +7,7 @@ interface Props {
   filename: string;
   thumbnailName: string;
   onOpen: () => void;
-  onDownload: (e: React.MouseEvent) => void;
+  onDownload?: (e: React.MouseEvent) => void;
 }
 
 export default function PhotoCard({ filename, thumbnailName, onOpen, onDownload }: Props) {
@@ -33,13 +33,15 @@ export default function PhotoCard({ filename, thumbnailName, onOpen, onDownload 
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end justify-between p-2.5">
         <span className="text-white/80 text-xs truncate max-w-[80%] drop-shadow">{filename}</span>
-        <button
-          onClick={onDownload}
-          className="w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center text-sm shadow transition-all hover:scale-110"
-          title="Download"
-        >
-          ↓
-        </button>
+        {onDownload && (
+          <button
+            onClick={onDownload}
+            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center text-sm shadow transition-all hover:scale-110"
+            title="Download"
+          >
+            ↓
+          </button>
+        )}
       </div>
     </div>
   );

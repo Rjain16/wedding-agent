@@ -6,6 +6,8 @@ import PhotoCard from "./PhotoCard";
 import { photoUrl } from "@/lib/storage";
 import type { ManifestEntry } from "@/lib/types";
 
+const DOWNLOADS_ENABLED = false;
+
 // 3 rows of the grid — gives ~10 on mobile (2 cols), ~15 on laptop (5 cols)
 function calcBatch(): number {
   if (typeof window === "undefined") return 15;
@@ -167,7 +169,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset, brow
 
         <div className="flex gap-2 shrink-0">
           <button onClick={onReset} className="btn-secondary">{browseAll ? "← Back" : "Try another selfie"}</button>
-          {photos.length > 0 && (
+          {photos.length > 0 && DOWNLOADS_ENABLED && (
             <button onClick={downloadAll} disabled={downloading} className="btn-primary">
               {downloading ? `Downloading ${dlProgress}%…` : `↓ Download all`}
             </button>
@@ -196,7 +198,7 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset, brow
                   filename={filename}
                   thumbnailName={entry?.thumbnail ?? filename}
                   onOpen={() => openAt(i)}
-                  onDownload={(e) => downloadSingle(e, filename)}
+                  onDownload={DOWNLOADS_ENABLED ? (e) => downloadSingle(e, filename) : undefined}
                 />
               );
             })}
@@ -241,12 +243,14 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset, brow
               <span className="text-white/40 text-xs font-mono truncate max-w-[40%]">{currentFilename}</span>
               <div className="flex items-center gap-2">
                 <span className="text-white/50 text-xs sm:text-sm">{lightboxIndex + 1} / {photos.length}</span>
-                <button
-                  onClick={(e) => downloadSingle(e, currentFilename)}
-                  className="btn-primary py-1.5 px-3 text-xs sm:text-sm"
-                >
-                  ↓ Save
-                </button>
+                {DOWNLOADS_ENABLED && (
+                  <button
+                    onClick={(e) => downloadSingle(e, currentFilename)}
+                    className="btn-primary py-1.5 px-3 text-xs sm:text-sm"
+                  >
+                    ↓ Save
+                  </button>
+                )}
                 <button
                   onClick={close}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-base transition-all hover:scale-110"
