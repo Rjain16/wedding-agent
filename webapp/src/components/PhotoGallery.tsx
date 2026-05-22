@@ -18,9 +18,10 @@ interface Props {
   matchedFilenames: string[];
   manifest: ManifestEntry[];
   onReset: () => void;
+  browseAll?: boolean;
 }
 
-export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Props) {
+export default function PhotoGallery({ matchedFilenames, manifest, onReset, browseAll = false }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [dlProgress, setDlProgress] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -142,23 +143,30 @@ export default function PhotoGallery({ matchedFilenames, manifest, onReset }: Pr
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold" style={{ color: "#210235" }}>
-              {photos.length === 0 ? "No matches found" : `${photos.length} photo${photos.length === 1 ? "" : "s"} found`}
+              {browseAll
+                ? `All ${photos.length} photos`
+                : photos.length === 0 ? "No matches found" : `${photos.length} photo${photos.length === 1 ? "" : "s"} found`}
             </h2>
-            {photos.length > 0 && (
+            {photos.length > 0 && !browseAll && (
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ background: "linear-gradient(135deg, #C231FF, #9b1fd4)" }}>
                 ✓ matched
+              </span>
+            )}
+            {browseAll && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ background: "linear-gradient(135deg, #5AAFFE, #1F22B2)" }}>
+                sorted A–Z
               </span>
             )}
           </div>
           {photos.length > 0 && (
             <p className="text-sm text-gray-400 mt-1">
-              Tap any photo to view · swipe or use ← → to browse
+              {browseAll ? "All photos sorted by name · tap to view" : "Tap any photo to view · swipe or use ← → to browse"}
             </p>
           )}
         </div>
 
         <div className="flex gap-2 shrink-0">
-          <button onClick={onReset} className="btn-secondary">Try another selfie</button>
+          <button onClick={onReset} className="btn-secondary">{browseAll ? "← Back" : "Try another selfie"}</button>
           {photos.length > 0 && (
             <button onClick={downloadAll} disabled={downloading} className="btn-primary">
               {downloading ? `Downloading ${dlProgress}%…` : `↓ Download all`}
